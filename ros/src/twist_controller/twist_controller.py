@@ -13,7 +13,7 @@ KP = 0.3
 KI = 0.1
 KD = 0.
 MN = 0.  # Minimum Throttle Value
-MX = 0.4  # Maximum Throttle Value
+MX = 0.8  # Maximum Throttle Value
 
 # Low Pass Filter Variables.  Initial values of 0.5, 0.02 per walkthrough
 # TODO: Try different values
