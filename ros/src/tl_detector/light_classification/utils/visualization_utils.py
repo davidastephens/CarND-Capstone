@@ -459,7 +459,7 @@ def visualize_boxes_and_labels_on_image_array(
     boxes,
     classes,
     scores,
-    category_index,
+    category_index=None,
     instance_masks=None,
     instance_boundaries=None,
     keypoints=None,
