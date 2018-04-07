@@ -7,7 +7,8 @@ from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from scipy.spatial import KDTree
-import numpy as np
+import datetime
+import os
 
 from light_classification.tl_classifier import TLClassifier
 import tf
@@ -15,6 +16,12 @@ import cv2
 import yaml
 
 STATE_COUNT_THRESHOLD = 3
+
+# Variables for saving images
+SAVE_IMAGES = False
+SECONDS_BETWEEN_IMAGES = 3
+MAX_DISTANCE_TO_LIGHT = 150  # Measured in number of waypoints
+DIR_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "light_classification", "images")
 
 
 class TLDetector(object):
@@ -56,6 +63,9 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+
+        self.last_image_save_time = datetime.datetime.now()
+        self.light_distance = 0
 
         rospy.spin()
 
@@ -134,7 +144,6 @@ class TLDetector(object):
         """
         # Temporarily use the state from the channel before classifier is implemented
         # TODO: Implement classifier
-        return light.state
 
         if (not self.has_image):
             self.prev_light_loc = None
@@ -142,6 +151,16 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
+        if SAVE_IMAGES and (self.light_distance < MAX_DISTANCE_TO_LIGHT):
+            now = datetime.datetime.now()
+            time_delta = now - self.last_image_save_time
+            if time_delta > datetime.timedelta(seconds=SECONDS_BETWEEN_IMAGES):
+                self.last_image_save_time = now
+                file_name = os.path.join(DIR_PATH,
+                                         str(light.state) + "_" + str(self.light_distance) + "_" + str(now) + ".jpg")
+                cv2.imwrite(file_name, cv_image)
+
+        return light.state
         # Get classification
         return self.light_classifier.get_classification(cv_image)
 
@@ -173,12 +192,12 @@ class TLDetector(object):
                     closest_stopline_location = stop_line_positions[closest_light_idx]
                     closest_stopline_idx = self.get_closest_waypoint(*closest_stopline_location)
 
-
         if closest_light_idx is not None:
+            self.light_distance = closest_stopline_idx - closest_car_idx
             state = self.get_light_state(self.lights[closest_light_idx])
             return closest_stopline_idx, state
 
-        #self.waypoints = None
+        # self.waypoints = None
         return -1, TrafficLight.UNKNOWN
 
 
