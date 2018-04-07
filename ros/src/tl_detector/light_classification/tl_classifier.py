@@ -35,38 +35,29 @@ class TLClassifier(object):
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
+            self.num = self.graph.get_tensor_by_name('num_detections:0')
+            self.boxes = self.graph.get_tensor_by_name('detection_boxes:0')
+            self.scores = self.graph.get_tensor_by_name('detection_scores:0')
+            self.classes = self.graph.get_tensor_by_name('detection_classes:0')
+            self.image_tensor = self.graph.get_tensor_by_name('image_tensor:0')
+            self.session = tf.Session(graph=self.graph, config=config)
 
     def run_inference_for_single_image(self, image):
-
         with self.graph.as_default():
-            with tf.Session() as sess:
-                # Get handles to input and output tensors
-                ops = tf.get_default_graph().get_operations()
-                all_tensor_names = {output.name for op in ops for output in op.outputs}
-                tensor_dict = {}
-                for key in [
-                    'num_detections', 'detection_boxes', 'detection_scores',
-                    'detection_classes', 'detection_masks'
-                ]:
-                    tensor_name = key + ':0'
-                    if tensor_name in all_tensor_names:
-                        tensor_dict[key] = tf.get_default_graph().get_tensor_by_name(
-                            tensor_name)
+            # Run inference
+            number, boxes, scores, classes = self.session.run([self.num, self.boxes, self.scores, self.classes],
+                                   feed_dict={self.image_tensor: np.expand_dims(image, 0)})
+        number = number[0]
+        boxes = boxes[0]
+        scores = scores[0]
+        classes = classes[0]
+        return number, boxes, scores, classes
 
-                image_tensor = tf.get_default_graph().get_tensor_by_name('image_tensor:0')
+    @staticmethod
+    def filter_output_for_class(number, boxes, scores, classes, cls=10):
+        mask = classes == cls
+        return number, boxes[mask], scores[mask], classes[mask]
 
-                # Run inference
-                output_dict = sess.run(tensor_dict,
-                                       feed_dict={image_tensor: np.expand_dims(image, 0)})
-
-                # all outputs are float32 numpy arrays, so convert types as appropriate
-                output_dict['num_detections'] = int(output_dict['num_detections'][0])
-                output_dict['detection_classes'] = output_dict[
-                    'detection_classes'][0].astype(np.uint8)
-                output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
-                output_dict['detection_scores'] = output_dict['detection_scores'][0]
-
-        return output_dict
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -89,13 +80,16 @@ if __name__ == '__main__':
     for image_file in image_files:
         img = cv2.imread(image_file)
         _, filename = os.path.split(image_file)
-        output_dict = classifier.run_inference_for_single_image(img)
+        number, boxes, scores, classes = classifier.run_inference_for_single_image(img)
+        number, boxes, scores, classes = classifier.filter_output_for_class(number, boxes, scores, classes)
         vis_util.visualize_boxes_and_labels_on_image_array(
             img,
-            output_dict['detection_boxes'],
-            output_dict['detection_classes'],
-            output_dict['detection_scores'],
+            boxes,
+            classes,
+            scores,
             use_normalized_coordinates=True,
+            min_score_thresh=0.3,
             agnostic_mode=True,
             line_thickness=8)
         cv2.imwrite(os.path.join(OUTPUT_DIR_PATH, filename), img)
+
