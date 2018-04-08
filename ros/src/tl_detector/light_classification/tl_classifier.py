@@ -1,9 +1,9 @@
 from styx_msgs.msg import TrafficLight
+import rospy
 
 import glob
 import os
 import cv2
-import sys
 
 import tensorflow as tf
 import numpy as np
@@ -13,6 +13,7 @@ import numpy as np
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 DIR_PATH = os.path.join(FILE_PATH, "images")
 OUTPUT_DIR_PATH = os.path.join(FILE_PATH, "images_out")
+OUTPUT_BOX_DIR_PATH = os.path.join(FILE_PATH, "boxes_out")
 
 from utils import visualization_utils as vis_util
 
@@ -58,6 +59,26 @@ class TLClassifier(object):
         mask = classes == cls
         return number, boxes[mask], scores[mask], classes[mask]
 
+    @staticmethod
+    def extract_best_image(image, boxes, scores, classes, threshold=0.3):
+        if len(scores) == 0:
+            rospy.loginfo('No traffic lights detected')
+            return None
+        if scores[0] < threshold:
+            rospy.loginfo('No traffic lights detected above threshold of {}, highest score {}'.format(threshold, scores[0]))
+            return None
+
+        b = boxes[0]
+        height = image.shape[0]
+        width = image.shape[1]
+
+        h0 = int(b[0] * height)
+        h1 = int(b[2] * height)
+        w0 = int(b[1] * width)
+        w1 = int(b[3] * width)
+
+        cropped = image[h0:h1, w0:w1]
+        return cv2.resize(cropped, (32, 32))
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -92,4 +113,7 @@ if __name__ == '__main__':
             agnostic_mode=True,
             line_thickness=8)
         cv2.imwrite(os.path.join(OUTPUT_DIR_PATH, filename), img)
+        traffic_light_img = classifier.extract_best_image(img, boxes, scores, classes)
+        if traffic_light_img is not None:
+            cv2.imwrite(os.path.join(OUTPUT_BOX_DIR_PATH, filename), traffic_light_img)
 
