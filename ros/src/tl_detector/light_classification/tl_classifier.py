@@ -17,9 +17,9 @@ OUTPUT_BOX_DIR_PATH = os.path.join(FILE_PATH, "boxes_out")
 
 from utils import visualization_utils as vis_util
 
-MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
-PATH_TO_CKPT = os.path.join(FILE_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
-NUM_CLASSES = 90
+MODEL_NAME = 'traffic_light_graph'
+PATH_TO_CKPT = os.path.join(FILE_PATH, '..', '..', '..', '..', 'classifier', MODEL_NAME, 'frozen_inference_graph.pb')
+NUM_CLASSES = 4
 
 
 class TLClassifier(object):
@@ -51,7 +51,7 @@ class TLClassifier(object):
         number = number[0]
         boxes = boxes[0]
         scores = scores[0]
-        classes = classes[0]
+        classes = classes[0].astype(int)
         return number, boxes, scores, classes
 
     @staticmethod
@@ -98,19 +98,28 @@ if __name__ == '__main__':
     image_files = glob.glob(os.path.join(DIR_PATH, '*.*'))
 
     classifier = TLClassifier()
+
+    category_index={1: {'id': 1, 'name': 'Red'},
+                    2: {'id': 2, 'name': 'Yellow'},
+                    3: {'id': 3, 'name': 'Green'},
+                    4: {'id': 4, 'name': 'Unknown'}}  
+
     for image_file in image_files:
         img = cv2.imread(image_file)
         _, filename = os.path.split(image_file)
         number, boxes, scores, classes = classifier.run_inference_for_single_image(img)
-        number, boxes, scores, classes = classifier.filter_output_for_class(number, boxes, scores, classes)
+        #number, boxes, scores, classes = classifier.filter_output_for_class(number, boxes, scores, classes)
+        print("Classes: {}".format(classes))
+        print("Scores: {}".format(scores))
         vis_util.visualize_boxes_and_labels_on_image_array(
             img,
             boxes,
             classes,
             scores,
+            category_index=category_index,
             use_normalized_coordinates=True,
-            min_score_thresh=0.3,
-            agnostic_mode=True,
+            min_score_thresh=0.20,
+            agnostic_mode=False,
             line_thickness=8)
         cv2.imwrite(os.path.join(OUTPUT_DIR_PATH, filename), img)
         traffic_light_img = classifier.extract_best_image(img, boxes, scores, classes)

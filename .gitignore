@@ -12,6 +12,10 @@ traffic_light_bag_file
 *.pb
 *.ckpt
 *.ckpt.*
+*.ckpt-*
 *.tfevents.*
 *.csv
 *.yaml
+*.swp
+*.db
+*.record
