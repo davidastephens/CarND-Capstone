@@ -21,7 +21,7 @@ import yaml
 STATE_COUNT_THRESHOLD = 3
 
 # Variables for saving images
-SAVE_IMAGES = True
+SAVE_IMAGES = False
 SECONDS_BETWEEN_IMAGES = 3
 DIR_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "light_classification", "images")
 
@@ -200,9 +200,10 @@ class TLDetector(object):
                     closest_light_idx += 1
                     closest_stopline_location = stop_line_positions[closest_light_idx]
                     closest_stopline_idx = self.get_closest_waypoint(*closest_stopline_location)
-        if not self.simulator:
+        if not self.simulator and not self.pose:
             closest_light_idx = 0
             closest_stopline_idx = 0
+
         if closest_light_idx is not None:
             state = self.get_light_state(self.lights[closest_light_idx])
             return closest_stopline_idx, state
