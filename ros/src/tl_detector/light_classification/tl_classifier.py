@@ -111,21 +111,19 @@ class TLClassifier(object):
 if __name__ == '__main__':
     image_files = glob.glob(os.path.join(DIR_PATH, '*.*'))
 
-    classifier = TLClassifier()
+    classifier = TLClassifier(False)
 
 
     for image_file in image_files:
         img = cv2.imread(image_file)
         _, filename = os.path.split(image_file)
         number, boxes, scores, classes = classifier.run_inference_for_single_image(img)
-        print("Classes: {}".format(classes))
-        print("Scores: {}".format(scores))
         vis_util.visualize_boxes_and_labels_on_image_array(
             img,
             boxes,
             classes,
             scores,
-            category_index=category_index,
+            category_index=CATEGORY_INDEX,
             use_normalized_coordinates=True,
             min_score_thresh=0.20,
             agnostic_mode=False,
