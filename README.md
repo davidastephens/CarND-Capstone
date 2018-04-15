@@ -1,6 +1,6 @@
 ### Team KOL members
 
-* **Team Learder:** David Stephens - david@davidstephens.io
+* **Team Leader:** David Stephens - david@stephenscapitalinc.com
 * **Team Member 1:** Santhosh Tamilarasan - santorta@gmail.com
 * **Team Member 2:** Andres Guzman - andguzman08@gmail.com
 * **Team Member 3:** Yury Astashonok - yury.astashonok@gmail.com
