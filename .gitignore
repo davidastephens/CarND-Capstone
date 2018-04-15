@@ -4,3 +4,18 @@ build
 devel
 
 profile.tmp
+
+*.idea
+traffic_light_bag_file
+*.jpg
+*.png
+*.pb
+*.ckpt
+*.ckpt.*
+*.ckpt-*
+*.tfevents.*
+*.csv
+*.yaml
+*.swp
+*.db
+*.record
